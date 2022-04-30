@@ -10,4 +10,4 @@ More information can be found on the website:
 
 # Environment requirements for running project:
 
-Minimum Java 1.8 required
+Minimum Java 1.8 is required
