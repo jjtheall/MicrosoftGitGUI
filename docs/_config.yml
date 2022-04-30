@@ -1,4 +1,6 @@
-name: jjtheall homepage
-title: null
+name: GitHubGUI Protoype
+title: GitHub GUI
 plugins:
   - jemoji
+  - jekyll-remote-theme
+theme: jekyll-theme-hacker
