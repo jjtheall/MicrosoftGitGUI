@@ -1,5 +1,6 @@
 import git.tools.client.GitSubprocessClient;
 import github.tools.client.GitHubApiClient;
+import github.tools.client.RequestFailedException;
 import github.tools.client.RequestParams;
 import github.tools.responseObjects.CreateRepoResponse;
 import github.tools.responseObjects.GetRepoInfoResponse;
@@ -14,6 +15,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Scanner;
 
 public class MicrosoftGitGUI extends JFrame {
@@ -27,6 +30,7 @@ public class MicrosoftGitGUI extends JFrame {
 	JRadioButton privateButton;
 	JLabel link;
 	JLabel outputLabel;
+	JLabel errorLabel;
 
 	public MicrosoftGitGUI() {
 		// we can fix this later
@@ -60,7 +64,7 @@ public class MicrosoftGitGUI extends JFrame {
 				"turn into a GitHub repo:");
 		JLabel enterDescLabel = new JLabel("(Optional) Enter a description for the repo:");
 		JLabel usernameLabel = new JLabel("Enter your GitHub username: ");
-		JLabel tokenLabel = new JLabel("Make sure your API token is in \'token.txt\'");
+		JLabel tokenLabel = new JLabel("Make sure your auth token is in \'token.txt\' file in root folder");
 
 		usernameTextField = new JTextField();
 		usernameTextField.setPreferredSize(new Dimension(400,30));
@@ -87,7 +91,8 @@ public class MicrosoftGitGUI extends JFrame {
 		link.setVisible(false);
 
 		//creating component for error handling, this will be added outside of a panel
-		JLabel errorLabel = new JLabel("Something went wrong...");
+		errorLabel = new JLabel("Something went wrong...");
+		errorLabel.setForeground(Color.red);
 		errorLabel.setVisible(false);
 
 		//adding components for output panel
@@ -130,18 +135,18 @@ public class MicrosoftGitGUI extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 			//git repo created
 			GitSubprocessClient gitSubprocessClient = new GitSubprocessClient(pathTextField.getText());
-			String gitInit = gitSubprocessClient.gitInit();
+			try{
+				String gitInit = gitSubprocessClient.gitInit();
+			} catch (RuntimeException runtimeException){
+				errorLabel.setVisible(true);
+			}
 
 			//.gitignore file creation
 			File gitIgnore = new File(pathTextField.getText(),".gitignore");
-			FileWriter gitIgnoreFW = null;
-			BufferedWriter gitIgnoreBW = null;
 			PrintWriter gitIgnorePW = null;
 			try{
 				gitIgnore.createNewFile();
-				gitIgnoreFW = new FileWriter(".gitignore",true);
-				gitIgnoreBW = new BufferedWriter(gitIgnoreFW);
-				gitIgnorePW = new PrintWriter(gitIgnoreBW);
+				gitIgnorePW = new PrintWriter(gitIgnore);
 
 				gitIgnorePW.println(".project");
 				gitIgnorePW.println(".classpath");
@@ -155,52 +160,33 @@ public class MicrosoftGitGUI extends JFrame {
 				gitIgnorePW.flush();
 
 			} catch(IOException e1){
-				//TODO: error handling
-				System.out.println("error with writing to gitignore");
+				errorLabel.setVisible(true);
 			} finally {
-				try{
-					gitIgnorePW.close();
-					gitIgnoreBW.close();
-					gitIgnoreFW.close();
-				} catch (IOException e2){
-					//TODO: error handling
-					System.out.println("error closing gitignore writers");
-				}
+				gitIgnorePW.close();
 			}
 
 			//README.md file creation
 			File readme = new File(pathTextField.getText(),"README.md");
-			FileWriter readmeFW = null;
-			BufferedWriter readmeBW = null;
 			PrintWriter readmePW = null;
 			String[] splitPath = pathTextField.getText().split("/");
 			String projectName = splitPath[splitPath.length-1];
 			try{
 				readme.createNewFile();
-				readmeFW = new FileWriter("README.md",true);
-				readmeBW = new BufferedWriter(gitIgnoreFW);
-				readmePW = new PrintWriter(gitIgnoreBW);
+				readmePW = new PrintWriter(readme);
 
 				readmePW.println(projectName);
 				readmePW.flush();
 
 			} catch(IOException e1){
-				//TODO: error handling
-				System.out.println("error writing to readme");
+				errorLabel.setVisible(true);
 			} finally {
-				try{
-					readmePW.close();
-					readmeBW.close();
-					readmeFW.close();
-				} catch (IOException e2){
-					//TODO: error handling
-					System.out.println("error closing readme writers");
-				}
+				readmePW.close();
 			}
 
 			//initial commit
 			String addAll = gitSubprocessClient.gitAddAll();
-			String commit = gitSubprocessClient.gitCommit("initial commit");
+			String commitMessage = "initial commit";
+			String commit = gitSubprocessClient.gitCommit(commitMessage);
 
 			//GitHub repo created
 			File tokenFile = new File("token.txt");
@@ -210,8 +196,7 @@ public class MicrosoftGitGUI extends JFrame {
 				token = fileScanner.nextLine();
 				fileScanner.close();
 			} catch (IOException e3){
-				//TODO: error handling
-				System.out.println("error reading token");
+				errorLabel.setVisible(true);
 			}
 
 			GitHubApiClient gitHubApiClient = new GitHubApiClient(usernameTextField.getText(),token);
@@ -231,16 +216,23 @@ public class MicrosoftGitGUI extends JFrame {
 			GetRepoInfoResponse repoInfo = gitHubApiClient.getRepoInfo(usernameTextField.getText(),projectName);
 			String url = repoInfo.getUrl();
 			String gitRemoteAdd = gitSubprocessClient.gitRemoteAdd("origin",url + ".git");
-			System.out.println("gitRemoteAdd: " + gitRemoteAdd);
-
-			System.out.println(gitSubprocessClient.gitStatus());
 
 			//initial commit pushed to GitHub
 			String push = gitSubprocessClient.gitPush("master");
-			System.out.println("push: " + push);
 
 			//give user url to new repo
 			link.setText(url);
+			link.addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseClicked(MouseEvent e) {
+					try{
+						Desktop.getDesktop().browse(new URI(url));
+					} catch (IOException | URISyntaxException e1){
+						e1.printStackTrace();
+					}
+				}
+			});
+			link.setForeground(Color.blue);
 			link.setVisible(true);
 			outputLabel.setVisible(true);
 		}
