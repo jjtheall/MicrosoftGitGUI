@@ -8,6 +8,10 @@ We partnered up with Microsoft to build a GUI prototype which will let users run
 
 To run this project, you will need minimum Java 1.8 version. You can clone this project to your computer and press the start button. After that, you will enter the directory path of the project that you would like to turn into GitHub repo. You can pick either you want it to be public or private. You can hit the create repository button and, you will receive a link your newly created GitHub repository which will have an initial commit, gitIgnore file, and README.md file.
 
+# Dependencies
+
+We are making use of two Java packages to manage Git subprocess and API calls. The first of which is the GitSubprocessClient and can be found [here](https://github.com/CSC109/GitSubprocessClient). We are using v0.0.12. The second is the GitHubApiClient and can be found [here](https://github.com/CSC109/GitHubApiClient) We are using v0.0.7. Both jar files must be downloaded and the libraries must be added as dependencies in your project structure in order to use this application.
+
 
 ![Image](./micro.jpeg)
 
