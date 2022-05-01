@@ -50,6 +50,7 @@ public class MicrosoftGitGUI extends JFrame {
 		//creating components for title panel
 		JLabel prototypeLabel = new JLabel("This application is a prototype. Things will be ugly " +
 				"and may not work as intended.");
+
 		//TODO: replace these next labels with images
 		JLabel microsoftImagePlaceholder = new JLabel("Microsoft Image");
 		JLabel quImagePlaceholder = new JLabel("QU Image");
@@ -174,7 +175,6 @@ public class MicrosoftGitGUI extends JFrame {
 			PrintWriter readmePW = null;
 			String[] splitPath = pathTextField.getText().split("/");
 			String projectName = splitPath[splitPath.length-1];
-			System.out.println(projectName);
 			try{
 				readme.createNewFile();
 				readmeFW = new FileWriter("README.md",true);
@@ -198,13 +198,9 @@ public class MicrosoftGitGUI extends JFrame {
 				}
 			}
 
-			System.out.println(gitSubprocessClient.gitStatus());
-
 			//initial commit
 			String addAll = gitSubprocessClient.gitAddAll();
-			System.out.println(addAll);
 			String commit = gitSubprocessClient.gitCommit("initial commit");
-			System.out.println(commit);
 
 			//GitHub repo created
 			File tokenFile = new File("token.txt");
@@ -217,8 +213,6 @@ public class MicrosoftGitGUI extends JFrame {
 				//TODO: error handling
 				System.out.println("error reading token");
 			}
-
-			System.out.println("token: " + token);
 
 			GitHubApiClient gitHubApiClient = new GitHubApiClient(usernameTextField.getText(),token);
 			RequestParams createRepoRequestParams = new RequestParams();
