@@ -1,3 +1,5 @@
+import git.tools.client.GitSubprocessClient;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -11,6 +13,7 @@ public class MicrosoftGitGUI extends JFrame {
 	JPanel inputPanel;
 	JPanel outputPanel;
 	JTextField pathTextField;
+	JTextField descriptionTextField;
 
 	public MicrosoftGitGUI() {
 		// we can fix this later
@@ -41,8 +44,20 @@ public class MicrosoftGitGUI extends JFrame {
 		//creating components for input panel
 		JLabel enterPathLabel = new JLabel("Enter the directory path of the project you would like to " +
 				"turn into a GitHub repo:");
+		JLabel enterDescLabel = new JLabel("(Optional) Enter a description for the repo:");
+
 		pathTextField = new JTextField();
-		pathTextField.setPreferredSize(new Dimension(200,30));
+		pathTextField.setPreferredSize(new Dimension(400,30));
+		descriptionTextField = new JTextField();
+		descriptionTextField.setPreferredSize(new Dimension(400,30));
+
+		ButtonGroup privacyButtons = new ButtonGroup();
+		JRadioButton privateButton = new JRadioButton("Private");
+		JRadioButton publicButton = new JRadioButton("Public");
+		publicButton.setSelected(true);
+		privacyButtons.add(privateButton);
+		privacyButtons.add(publicButton);
+
 		JButton createRepoButton = new JButton("Create Repo");
 
 		createRepoButton.addActionListener(new CreateRepoListener());
@@ -69,6 +84,10 @@ public class MicrosoftGitGUI extends JFrame {
 		//adding components for input panel
 		inputPanel.add(enterPathLabel);
 		inputPanel.add(pathTextField);
+		inputPanel.add(enterDescLabel);
+		inputPanel.add(descriptionTextField);
+		inputPanel.add(privateButton);
+		inputPanel.add(publicButton);
 		inputPanel.add(createRepoButton);
 
 		//adding panels to frame
@@ -88,7 +107,21 @@ public class MicrosoftGitGUI extends JFrame {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			System.out.println(pathTextField.getText());
+			//git repo created
+			
+			//.gitignore file creation
+
+			//README.md file creation
+
+			//initial commit
+
+			//GitHub repo created
+
+			//git repo remote set to GitHub repo
+
+			//initial commit pushed to GitHub
+
+			//give user url to new repo
 		}
 	}
 }
