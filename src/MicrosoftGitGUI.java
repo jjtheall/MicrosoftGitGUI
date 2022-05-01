@@ -42,6 +42,8 @@ public class MicrosoftGitGUI extends JFrame {
 		this.setLayout(new BoxLayout(this.getContentPane(), BoxLayout.Y_AXIS));
 
 		//instantiation of panels
+		ImagePanel imagePanel = new ImagePanel();
+
 		titlePanel = new JPanel();
 		titlePanel.setSize(new Dimension(1000,100));
 
@@ -54,10 +56,6 @@ public class MicrosoftGitGUI extends JFrame {
 		//creating components for title panel
 		JLabel prototypeLabel = new JLabel("This application is a prototype. Things will be ugly " +
 				"and may not work as intended.");
-
-		//TODO: replace these next labels with images
-		JLabel microsoftImagePlaceholder = new JLabel("Microsoft Image");
-		JLabel quImagePlaceholder = new JLabel("QU Image");
 
 		//creating components for input panel
 		JLabel enterPathLabel = new JLabel("Enter the directory path of the project you would like to " +
@@ -100,9 +98,7 @@ public class MicrosoftGitGUI extends JFrame {
 		outputPanel.add(link);
 
 		//adding components for title panel
-		titlePanel.add(microsoftImagePlaceholder);
 		titlePanel.add(prototypeLabel);
-		titlePanel.add(quImagePlaceholder);
 
 		//adding components for input panel
 		inputPanel.add(usernameLabel);
@@ -117,6 +113,7 @@ public class MicrosoftGitGUI extends JFrame {
 		inputPanel.add(createRepoButton);
 
 		//adding panels to frame
+		this.add(imagePanel);
 		this.add(titlePanel);
 		this.add(inputPanel);
 		this.add(outputPanel);
