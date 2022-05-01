@@ -1,19 +1,36 @@
 import git.tools.client.GitSubprocessClient;
+import github.tools.client.GitHubApiClient;
+import github.tools.client.RequestFailedException;
+import github.tools.client.RequestParams;
+import github.tools.responseObjects.CreateRepoResponse;
+import github.tools.responseObjects.GetRepoInfoResponse;
 
+import javax.imageio.IIOException;
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Scanner;
 
 public class MicrosoftGitGUI extends JFrame {
 
 	JPanel titlePanel;
 	JPanel inputPanel;
 	JPanel outputPanel;
+	JTextField usernameTextField;
 	JTextField pathTextField;
 	JTextField descriptionTextField;
+	JRadioButton privateButton;
+	JLabel link;
+	JLabel outputLabel;
+	JLabel errorLabel;
 
 	public MicrosoftGitGUI() {
 		// we can fix this later
@@ -37,7 +54,8 @@ public class MicrosoftGitGUI extends JFrame {
 		//creating components for title panel
 		JLabel prototypeLabel = new JLabel("This application is a prototype. Things will be ugly " +
 				"and may not work as intended.");
-		//replace these next labels with images
+
+		//TODO: replace these next labels with images
 		JLabel microsoftImagePlaceholder = new JLabel("Microsoft Image");
 		JLabel quImagePlaceholder = new JLabel("QU Image");
 
@@ -45,14 +63,18 @@ public class MicrosoftGitGUI extends JFrame {
 		JLabel enterPathLabel = new JLabel("Enter the directory path of the project you would like to " +
 				"turn into a GitHub repo:");
 		JLabel enterDescLabel = new JLabel("(Optional) Enter a description for the repo:");
+		JLabel usernameLabel = new JLabel("Enter your GitHub username: ");
+		JLabel tokenLabel = new JLabel("Make sure your auth token is in \'token.txt\' file in root folder");
 
+		usernameTextField = new JTextField();
+		usernameTextField.setPreferredSize(new Dimension(400,30));
 		pathTextField = new JTextField();
 		pathTextField.setPreferredSize(new Dimension(400,30));
 		descriptionTextField = new JTextField();
 		descriptionTextField.setPreferredSize(new Dimension(400,30));
 
 		ButtonGroup privacyButtons = new ButtonGroup();
-		JRadioButton privateButton = new JRadioButton("Private");
+		privateButton = new JRadioButton("Private");
 		JRadioButton publicButton = new JRadioButton("Public");
 		publicButton.setSelected(true);
 		privacyButtons.add(privateButton);
@@ -63,13 +85,14 @@ public class MicrosoftGitGUI extends JFrame {
 		createRepoButton.addActionListener(new CreateRepoListener());
 
 		//creating components for output panel
-		JLabel outputLabel = new JLabel("Here is the link to your brand new repo: ");
-		JLabel link = new JLabel("Click here");
+		outputLabel = new JLabel("Here is the link to your brand new repo: ");
+		link = new JLabel("Click here");
 		outputLabel.setVisible(false);
 		link.setVisible(false);
 
 		//creating component for error handling, this will be added outside of a panel
-		JLabel errorLabel = new JLabel("Something went wrong...");
+		errorLabel = new JLabel("Something went wrong...");
+		errorLabel.setForeground(Color.red);
 		errorLabel.setVisible(false);
 
 		//adding components for output panel
@@ -82,6 +105,9 @@ public class MicrosoftGitGUI extends JFrame {
 		titlePanel.add(quImagePlaceholder);
 
 		//adding components for input panel
+		inputPanel.add(usernameLabel);
+		inputPanel.add(usernameTextField);
+		inputPanel.add(tokenLabel);
 		inputPanel.add(enterPathLabel);
 		inputPanel.add(pathTextField);
 		inputPanel.add(enterDescLabel);
@@ -108,20 +134,107 @@ public class MicrosoftGitGUI extends JFrame {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			//git repo created
-			
+			GitSubprocessClient gitSubprocessClient = new GitSubprocessClient(pathTextField.getText());
+			try{
+				String gitInit = gitSubprocessClient.gitInit();
+			} catch (RuntimeException runtimeException){
+				errorLabel.setVisible(true);
+			}
+
 			//.gitignore file creation
+			File gitIgnore = new File(pathTextField.getText(),".gitignore");
+			PrintWriter gitIgnorePW = null;
+			try{
+				gitIgnore.createNewFile();
+				gitIgnorePW = new PrintWriter(gitIgnore);
+
+				gitIgnorePW.println(".project");
+				gitIgnorePW.println(".classpath");
+				gitIgnorePW.println("*.class");
+				gitIgnorePW.println("bin/");
+				gitIgnorePW.println(".settings/");
+				gitIgnorePW.println(".idea/");
+				gitIgnorePW.println("*.iml");
+				gitIgnorePW.println(".DS_Store");
+				gitIgnorePW.println("out/");
+				gitIgnorePW.flush();
+
+			} catch(IOException e1){
+				errorLabel.setVisible(true);
+			} finally {
+				gitIgnorePW.close();
+			}
 
 			//README.md file creation
+			File readme = new File(pathTextField.getText(),"README.md");
+			PrintWriter readmePW = null;
+			String[] splitPath = pathTextField.getText().split("/");
+			String projectName = splitPath[splitPath.length-1];
+			try{
+				readme.createNewFile();
+				readmePW = new PrintWriter(readme);
+
+				readmePW.println(projectName);
+				readmePW.flush();
+
+			} catch(IOException e1){
+				errorLabel.setVisible(true);
+			} finally {
+				readmePW.close();
+			}
 
 			//initial commit
+			String addAll = gitSubprocessClient.gitAddAll();
+			String commitMessage = "initial commit";
+			String commit = gitSubprocessClient.gitCommit(commitMessage);
 
 			//GitHub repo created
+			File tokenFile = new File("token.txt");
+			String token = "";
+			try{
+				Scanner fileScanner = new Scanner(tokenFile);
+				token = fileScanner.nextLine();
+				fileScanner.close();
+			} catch (IOException e3){
+				errorLabel.setVisible(true);
+			}
+
+			GitHubApiClient gitHubApiClient = new GitHubApiClient(usernameTextField.getText(),token);
+			RequestParams createRepoRequestParams = new RequestParams();
+			createRepoRequestParams.addParam("name",projectName);
+			if(!descriptionTextField.getText().equals("")){
+				createRepoRequestParams.addParam("description",descriptionTextField.getText());
+			}
+			if(privateButton.isSelected()){
+				createRepoRequestParams.addParam("private",true);
+			} else {
+				createRepoRequestParams.addParam("private",false);
+			}
+			CreateRepoResponse createRepoResponse = gitHubApiClient.createRepo(createRepoRequestParams);
 
 			//git repo remote set to GitHub repo
+			GetRepoInfoResponse repoInfo = gitHubApiClient.getRepoInfo(usernameTextField.getText(),projectName);
+			String url = repoInfo.getUrl();
+			String gitRemoteAdd = gitSubprocessClient.gitRemoteAdd("origin",url + ".git");
 
 			//initial commit pushed to GitHub
+			String push = gitSubprocessClient.gitPush("master");
 
 			//give user url to new repo
+			link.setText(url);
+			link.addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseClicked(MouseEvent e) {
+					try{
+						Desktop.getDesktop().browse(new URI(url));
+					} catch (IOException | URISyntaxException e1){
+						e1.printStackTrace();
+					}
+				}
+			});
+			link.setForeground(Color.blue);
+			link.setVisible(true);
+			outputLabel.setVisible(true);
 		}
 	}
 }
